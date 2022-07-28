@@ -108,7 +108,7 @@ def fullUploadInstallContentPack(sArgUploadFile):
             print("    Will Install...")
             rInst = installContentPack(sContentPackUniqueId, sContentPackRevVer)
             if rInst.status_code == 200:
-                print("        Install Successfully!")
+                print("        Installed Successfully!")
             else:
                 print("        Error: " + str(rInst.status_code) + " (" + rInst.text + ")")
         elif iStatusCode == 401:
