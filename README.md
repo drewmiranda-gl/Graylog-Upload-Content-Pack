@@ -7,6 +7,8 @@ This is a python script that enumerates all `.json` files in `./spotlights`, and
 
 1. Upload the contents of the `.json` file (content pack)
 2. Install the content pack using the id and rev (version) from the `.json` file
+3. Check if old version of same content pack contains any unique content, if it does not, uninstall it so there is no duplicate content (e.g. dashboards)
+    * Use `--remove-dups` argument. Disabled by default.
 
 Rudimentary error checking verifies the uploaded json succeeded (HTTP 201) before attempting to call the install API URI.
 
@@ -28,6 +30,23 @@ Instructions:
     * **ALL** `.json` files will be uploaded and installed
 2. execute python script:
     * `python3 upl-cpk.py`
+
+## Command Line Arguments
+
+```
+optional arguments:
+  -h, --help            show this help message and exit
+  --debug, --no-debug, -d
+                        For debugging (default: None)
+  --config CONFIG       Config Filename (default: config.ini)
+  --remove-dups, --no-remove-dups
+                        Remove Duplicate Content Pack Verions. (default: False)
+  --import, --no-import
+                        Import json files. (default: True)
+  --import-dir IMPORT_DIR
+                        Directory to import json content pack files from. Path is relative to script working
+                        directory. (default: spotlights)
+```
 
 ## Sample Output
 
