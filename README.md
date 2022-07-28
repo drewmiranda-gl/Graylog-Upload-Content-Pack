@@ -31,7 +31,16 @@ Instructions:
 2. execute python script:
     * `python3 upl-cpk.py`
 
-## Command Line Arguments
+### config.ini
+
+Argument | Description
+---- | ----
+https | true/false . If true, web URL will use HTTPS.
+host | server to connect to for graylog api.
+port | port to connect to for graylog api.
+user | Graylog user that has access to run API actions.
+password | password for user.
+### Command Line Arguments
 
 ```
 optional arguments:
