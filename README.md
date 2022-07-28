@@ -57,6 +57,25 @@ optional arguments:
                         directory. (default: spotlights)
 ```
 
+### Examples
+
+Default arguments. Does an import of json files, does not remove duplicates.
+
+```
+python3 upl-cpk.py
+```
+
+Import and then Remove Duplicate content:
+
+```
+python3 upl-cpk.py ---remove-dups
+```
+
+Remove duplicates only, no import of files.
+
+```
+python3 upl-cpk.py --remove-dups --no-import
+```
 ## Sample Output
 
 ```
