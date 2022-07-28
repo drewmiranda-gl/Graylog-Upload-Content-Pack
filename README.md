@@ -16,7 +16,7 @@ Rudimentary error checking verifies the uploaded json succeeded (HTTP 201) befor
 
 Requirements/Prereqs:
 
-* Local copy of this repo (e.g. via `git clone`)
+* Local copy of this repo (e.g. Download as Zip, or via `git clone`)
 * Python 3 (tested on 3.9.13)
 * Python modules
     * requests (`pip install requests`)
