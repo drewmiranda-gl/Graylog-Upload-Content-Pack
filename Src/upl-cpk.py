@@ -6,10 +6,32 @@ from requests.auth import HTTPBasicAuth
 import configparser
 import json
 import glob
+import argparse
+parser = argparse.ArgumentParser(description="Just an example",
+                                 formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+parser.add_argument("--debug", "-d", help="For debugging", action=argparse.BooleanOptionalAction)
+parser.add_argument("--config", help="Config Filename", default="config.ini")
+parser.add_argument("--remove-dups", help="Remove Duplicate Content Pack Verions.", action=argparse.BooleanOptionalAction, default=False)
+parser.add_argument("--import", help="Import json files.", action=argparse.BooleanOptionalAction, default=True)
+parser.add_argument("--import-dir", help="Directory to import json content pack files from. Path is relative to script working directory.", default="spotlights")
+
+args = parser.parse_args()
+configFromArg = vars(args)
+
+print("Arguments: ")
+print(configFromArg)
+print("")
+
+sAuthFile = configFromArg['config']
+sImportDir = configFromArg['import_dir']
+
+if configFromArg['debug']:
+    print("DEBUG ENABLED")
+    print("")
 
 # load config file for server info, auth info
 config = configparser.ConfigParser()
-config.read('auth.ini')
+config.read(sAuthFile)
 
 # build URI
 sArgBuildUri = ""
