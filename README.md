@@ -61,15 +61,9 @@ optional arguments:
 
 ```
 drewmiranda@DMIRANDA-MP Src % python3 upl-cpk.py
-Installing Content Pack:
-    Graylog Illuminate 2.3.0:Core Spotlight
-    7f43e0f9-936e-4858-bbf6-be0b5e31ca38
-    Error: 400 ({"type":"ApiError","message":"Content pack 7f43e0f9-936e-4858-bbf6-be0b5e31ca38 with this revision 26 already found!"})
 
-Installing Content Pack:
-    Graylog Illuminate:Event Definitions;2021-10-16
-    c28d8149-c731-4c38-b8ae-703ffaa6acd9
-    Error: 400 ({"type":"ApiError","message":"Content pack c28d8149-c731-4c38-b8ae-703ffaa6acd9 with this revision 4 already found!"})
+================================================================================
+Installing Content Packs from spotlights
 
 Installing Content Pack:
     Graylog Illuminate 2.3.0:Windows Security Spotlight
@@ -79,48 +73,24 @@ Installing Content Pack:
         Install Successfully!
 
 Installing Content Pack:
-    Graylog Illuminate 2.3.0:Palo Alto 9.1.x Spotlight
-    d9929aca-e380-48d0-b3e7-fe4072adecdf
-    Content Pack Successfully Uploaded
-    Will Install...
-        Install Successfully!
-
-Installing Content Pack:
-    Graylog Illuminate 2.3.0:Microsoft Sysmon Spotlight
-    c8a9e5a5-2cdf-431d-a407-64e9ccadd507
-    Content Pack Successfully Uploaded
-    Will Install...
-        Install Successfully!
-
-Installing Content Pack:
-    Graylog Illuminate 2.3.0:SonicWall NGFW Spotlight
-    3f06c971-85e2-456f-ab1c-bbc0b98510fb
-    Content Pack Successfully Uploaded
-    Will Install...
-        Install Successfully!
-
-Installing Content Pack:
-    Graylog Illuminate 2.3.0:Linux Auditbeat Spotlight
-    78f8f6ed-ce4c-4033-8be8-23bb6e92f058
-    Content Pack Successfully Uploaded
-    Will Install...
-        Install Successfully!
-
-Installing Content Pack:
-    Graylog Illuminate 2.3.0:Microsoft Defender Antivirus Spotlight
-    64b21d41-ee9c-47dc-adf6-30ccbd734dd7
-    Content Pack Successfully Uploaded
-    Will Install...
-        Install Successfully!
-
-Installing Content Pack:
     Graylog Illuminate:Event Definitions;2022-07-14
     c28d8149-c731-4c38-b8ae-703ffaa6acd9
     Error: 400 ({"type":"ApiError","message":"Content pack c28d8149-c731-4c38-b8ae-703ffaa6acd9 with this revision 6 already found!"})
 
-Installing Content Pack:
-    Graylog Illuminate:Event Definitions;2022-04-13
-    c28d8149-c731-4c38-b8ae-703ffaa6acd9
-    Error: 400 ({"type":"ApiError","message":"Content pack c28d8149-c731-4c38-b8ae-703ffaa6acd9 with this revision 5 already found!"})
+================================================================================
+Checking for duplicate Illuminate content packs...
+
+    Getting list of content packs...
+        Found 8 Illuminate content packs.
+
+    Content pack 'Graylog Illuminate:Event Definitions;2022-07-14' has 3 version
+        Checking for duplicate content...
+        No duplicate content found.
+
+    Content pack 'Graylog Illuminate 2.3.0:Palo Alto 9.1.x Spotlight' has 2 version
+        Checking for duplicate content...
+        Version: 12 is not unique
+            Uninstalling Content Pack: d9929aca-e380-48d0-b3e7-fe4072adecdf, rev: 62e2ec437ab8083b6b9eda8a
+            HTTP Status:200
 
 ```
