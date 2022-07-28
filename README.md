@@ -21,7 +21,7 @@ Requirements/Prereqs:
 * Python modules
     * requests (`pip install requests`)
     * configparser (`pip install configparser`)
-* Configure contents of `config.ini` AND **rename to `auth.ini`**
+* Configure contents of `config.ini`
 
 Instructions:
 
