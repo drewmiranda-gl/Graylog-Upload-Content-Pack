@@ -156,7 +156,14 @@ exit()
 
 
 
+if configFromArg['import']:
+    print("================================================================================")
+    print("Installing Content Packs from " + sImportDir)
+    print("")
 
+    oFiles = glob.glob("spotlights/*.json")
+    for file in oFiles:
+        fullUploadInstallContentPack(file)
 
 
 # misc notes
