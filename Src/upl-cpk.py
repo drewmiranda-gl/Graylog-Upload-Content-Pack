@@ -17,9 +17,55 @@ parser.add_argument("--config", help="Config Filename", default="config.ini")
 parser.add_argument("--remove-dups", help="Remove Duplicate Content Pack Verions.", action=argparse.BooleanOptionalAction, default=False)
 parser.add_argument("--import", help="Import json files.", action=argparse.BooleanOptionalAction, default=True)
 parser.add_argument("--import-dir", help="Directory to import json content pack files from. Path is relative to script working directory.", default="spotlights")
+parser.add_argument("--verbose", help="Verbose output.", action=argparse.BooleanOptionalAction, default=False)
 
 args = parser.parse_args()
 configFromArg = vars(args)
+
+
+# font
+#           Style
+#           v Color
+#           v v  Background
+#           v v  v
+defText = "\033[0;30;50m"
+alertText = "\033[1;33;50m"
+errorText = "\033[1;31;50m"
+successText = "\033[1;32;50m"
+
+print(defText)
+
+# Colors
+# 
+# Example
+# Text Style;Color;Background
+# 
+# Text Style
+#   No Effect   0
+#   Bold        1
+#   Underline   2
+#   Negative1   3
+#   Negative2   5
+# 
+# Color
+#   Black       30
+#   Red         31
+#   Green       32
+#   Yellow      33
+#   Blue        34
+#   Purple      35
+#   Cyan        36
+#   White       37
+# 
+# Backgrounds
+#   Black       40
+#   Red         41
+#   Green       42
+#   Yellow      43
+#   Blue        44
+#   Purple      45
+#   Cyan        46
+#   White       47
 
 print("Arguments: ")
 print(configFromArg)
@@ -48,6 +94,9 @@ sArgHost = config['DEFAULT']['host']
 sArgPort = config['DEFAULT']['port']
 sArgUser = config['DEFAULT']['user']
 sArgPw = config['DEFAULT']['password']
+
+# print("Graylog Server: " + sArgHost)
+print(alertText + "Graylog Server: " + sArgHost + defText + "\n")
 
 # build server:host and concat with URI
 sArgBuildUri=sArgBuildUri+sArgHost+":"+sArgPort
@@ -108,18 +157,20 @@ def fullUploadInstallContentPack(sArgUploadFile):
             print("    Will Install...")
             rInst = installContentPack(sContentPackUniqueId, sContentPackRevVer)
             if rInst.status_code == 200:
-                print("        Installed Successfully!")
+                print("        " + successText + "Installed Successfully!" + defText)
             else:
-                print("        Error: " + str(rInst.status_code) + " (" + rInst.text + ")")
+                print("        " + errorText + "Error: " + str(rInst.status_code) + " (" + rInst.text + ")" + defText)
         elif iStatusCode == 401:
             print("")
-            print("ERROR! Authentication error. Please verify config file is configured correctly.")
+            print(errorText + "ERROR! Authentication error. Please verify config file is configured correctly." + defText)
             print("")
             exit()
         elif iStatusCode == 400:
-            print("        Already Installed!")
+            print("        " + successText + "Already Installed!" + defText)
+            if configFromArg['verbose']:
+                print("    " + errorText + "Error: " + str(iStatusCode) + " (" + r.text + ")" + defText)
         else:
-            print("    Error: " + str(iStatusCode) + " (" + r.text + ")")
+            print("    " + errorText + "Error: " + str(iStatusCode) + " (" + r.text + ")" + defText)
     
     print("")
 
@@ -131,7 +182,7 @@ def getLatestIlluminateContentPacks():
     # lIllCtPkIds = []
     dictIlluminateContentPacks = {}
 
-    print("    Getting list of content packs...")
+    print("Getting list of content packs...")
 
     # specify URL
     sUrl = sArgBuildUri + "/api/system/content_packs/latest"
@@ -139,6 +190,8 @@ def getLatestIlluminateContentPacks():
     # headers
     sHeaders = {"Accept":"application/json", "X-Requested-By":"python-ctpk-upl"}
 
+    if configFromArg['verbose']:
+        print("requests.get: " + sUrl)
     r = requests.get(sUrl, headers=sHeaders, verify=False, auth=HTTPBasicAuth(sArgUser, sArgPw))
     if r.status_code == 200:
         intIllCtPk = 0
@@ -153,11 +206,13 @@ def getLatestIlluminateContentPacks():
             if re.match(regex, ctpk['name']):
                 intIllCtPk += 1
 
-        print("        Found " + str(intIllCtPk) + " Illuminate content packs.")
+        print("    Found " + str(intIllCtPk) + " Illuminate content packs.")
 
         for ctpk in oJsonContentPacks['content_packs']:
             if re.match(regex, ctpk['name']):
-                # print("Illumate Content Pack: " + ctpk['name'])
+                if configFromArg['verbose']:
+                    print("        Illumate Content Pack: " + ctpk['name'])
+                    print("            ID: " + ctpk['id'] + ", Rev: " + str(ctpk['rev']))
                 # lMetaKeys.append(ctpk['id'])
                 dictIlluminateContentPacks[ctpk['id']] = {'rev': ctpk['rev'], 'name': ctpk['name']}
 
@@ -165,10 +220,10 @@ def getLatestIlluminateContentPacks():
 
 
     else:
-        print("    ERROR! HTTP Status: " + str(r.status_code))
+        print("    " + errorText + "ERROR! HTTP Status: " + str(r.status_code) + defText)
 
 def doUninstallContentPackRevById(argContentPackId, argContentPackRevId):
-    print("            Uninstalling Content Pack: " + argContentPackId + ", rev: " + argContentPackRevId)
+    print("        Uninstalling Content Pack: " + argContentPackId + ", rev: " + argContentPackRevId)
 
     # specify URL
     sUrl = sArgBuildUri + "/api/system/content_packs/" + argContentPackId + "/installations/" + argContentPackRevId
@@ -177,7 +232,7 @@ def doUninstallContentPackRevById(argContentPackId, argContentPackRevId):
     sHeaders = {"Accept":"application/json", "X-Requested-By":"python-ctpk-upl"}
 
     r = requests.delete(sUrl, headers=sHeaders, verify=False, auth=HTTPBasicAuth(sArgUser, sArgPw))
-    print("            HTTP Status:" + str(r.status_code))
+    print("        HTTP Status:" + str(r.status_code))
 
 def doCompareFindIfOldRevsCanBeUninstalled(argJsonContentPackAllRevs):
     listRevs = []
@@ -212,7 +267,7 @@ def doCompareFindIfOldRevsCanBeUninstalled(argJsonContentPackAllRevs):
             listUniques.append(strConcatUnique)
         
         if not isRevUnique:
-            print("        Version: " + str(revNumber) + " is not unique")
+            print("    " + alertText + "Version: " + str(revNumber) + " is not unique" + defText)
             strContentPackId = dictIlluminateContentPackInstallRevs[revNumber]['content_pack_id']
             strInstallId = dictIlluminateContentPackInstallRevs[revNumber]['_id']
             # print("strContentPackId: " + strContentPackId)
@@ -220,10 +275,10 @@ def doCompareFindIfOldRevsCanBeUninstalled(argJsonContentPackAllRevs):
             if not configFromArg['debug']:
                 doUninstallContentPackRevById(strContentPackId, strInstallId)
             else:
-                print("            debug enabled, skipping uninstall content pack version!")
+                print("        debug enabled, skipping uninstall content pack version!")
     
     if isRevUnique:
-        print("        No duplicate content found.")
+        print("    No duplicate content found.")
 
 
 
@@ -252,8 +307,8 @@ def getContentPack(argContentPackId, argContentPackName):
             # more than one, we may have duplicates
             # check if old rev has anything new rev does not
             print("")
-            print("    Content pack '" + argContentPackName + "' has " + str(iFoundRevs) + " version")
-            print("        Checking for duplicate content...")
+            print("Content pack '" + argContentPackName + "' has " + str(iFoundRevs) + " version")
+            print("    Checking for duplicate content...")
             doCompareFindIfOldRevsCanBeUninstalled(oJsonContentPack['installations'])
 
     else:
