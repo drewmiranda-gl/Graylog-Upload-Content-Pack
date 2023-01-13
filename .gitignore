@@ -1,3 +1,5 @@
 Src/auth.ini
 .DS_Store
 Src/spotlights/*.json
+Src/extract/*
+*.zip
