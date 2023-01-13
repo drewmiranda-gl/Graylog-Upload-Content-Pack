@@ -8,6 +8,10 @@ import json
 import glob
 import argparse
 import re
+import zipfile
+import os
+from os.path import exists
+import shutil
 
 # defaults
 parser = argparse.ArgumentParser(description="Just an example",
@@ -319,6 +323,52 @@ def doCheckForDuplicateContentPacks():
     for key in dictContentPacksLatest:
         jsonContentPack = getContentPack(key, dictContentPacksLatest[key]['name'])
 
+def listdirs(folder):
+    return [d for d in os.listdir(folder) if os.path.isdir(os.path.join(folder, d))]
+
+def doUnzipFile(path_to_zip_file):
+    sFileExt = path_to_zip_file[-4:]
+
+    # verify file ext is .zip
+    if not sFileExt.lower() == ".zip":
+        print(errorText + "ERROR: file extension is not .zip" + defText)
+        return None
+
+    # verify the specified file exists
+    if not exists(path_to_zip_file):
+        print(errorText + "ERROR: file " + path_to_zip_file + " does not exist!" + defText)
+        return None
+    
+    
+    # iLen = len(path_to_zip_file)
+    # iNewLen = iLen - 4
+    sExtractFolder = "extract"
+    if exists(sExtractFolder):
+        print(alertText + "Warning: Folder " + sExtractFolder + " already exists. Deleting." + defText)
+        # shutil.rmtree(sExtractFolder)
+    
+    # with zipfile.ZipFile(path_to_zip_file, 'r') as zip_ref:
+    #     zip_ref.extractall(sExtractFolder)
+
+    if exists(sExtractFolder):
+        # extract successful
+        # get child items
+        # dir_list =  os.listdir(sExtractFolder)
+        dir_list = listdirs(sExtractFolder)
+        
+        if len(dir_list) > 0:
+            return sExtractFolder + "/" + dir_list[0]
+    else:
+        print(errorText + "ERROR! Extraction failed!")
+
+def getBundleZipFileName(arg_folder):
+    # print(arg_folder)
+    dir_list =  os.listdir(arg_folder)
+    for file in dir_list:
+        # print(file)
+        file_ext = file[-4:]
+        if file_ext.lower() == ".zip":
+            return arg_folder + "/" + file
 
 
 
@@ -330,11 +380,11 @@ def doCheckForDuplicateContentPacks():
 
 
 
+extracted_folder = doUnzipFile("graylog_illuminate_standard.v3.1.0.zip")
+dir_spotlights = extracted_folder + "/" + "spotlights"
+ill_bundle_zip = getBundleZipFileName(extracted_folder)
 
-
-
-
-
+exit()
 
 
 # getContentPack("78f8f6ed-ce4c-4033-8be8-23bb6e92f058")
