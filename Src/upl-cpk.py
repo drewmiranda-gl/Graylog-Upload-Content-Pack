@@ -382,11 +382,11 @@ def getBundleZipFileName(arg_folder):
 
 
 
-extracted_folder = doUnzipFile("graylog_illuminate_standard.v3.1.0.zip")
-dir_spotlights = extracted_folder + "/" + "spotlights"
-ill_bundle_zip = getBundleZipFileName(extracted_folder)
+# extracted_folder = doUnzipFile("graylog_illuminate_standard.v3.1.0.zip")
+# dir_spotlights = extracted_folder + "/" + "spotlights"
+# ill_bundle_zip = getBundleZipFileName(extracted_folder)
 
-exit()
+# exit()
 
 
 # getContentPack("78f8f6ed-ce4c-4033-8be8-23bb6e92f058")
