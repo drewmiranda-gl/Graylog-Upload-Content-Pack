@@ -288,7 +288,7 @@ def doCompareFindIfOldRevsCanBeUninstalled(argJsonContentPackAllRevs):
 
 
 
-def getContentPack(argContentPackId, argContentPackName):
+def doRemoveDuplicateContentPackVerionInstalls(argContentPackId, argContentPackName):
     iFoundRevs = 0
 
     # print("")
@@ -323,7 +323,7 @@ def getContentPack(argContentPackId, argContentPackName):
 def doCheckForDuplicateContentPacks():
     dictContentPacksLatest = getLatestIlluminateContentPacks()
     for key in dictContentPacksLatest:
-        jsonContentPack = getContentPack(key, dictContentPacksLatest[key]['name'])
+        jsonContentPack = doRemoveDuplicateContentPackVerionInstalls(key, dictContentPacksLatest[key]['name'])
 
 def listdirs(folder):
     return [d for d in os.listdir(folder) if os.path.isdir(os.path.join(folder, d))]
