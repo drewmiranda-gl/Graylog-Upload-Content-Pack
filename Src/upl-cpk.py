@@ -12,6 +12,8 @@ import zipfile
 import os
 from os.path import exists
 import shutil
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # defaults
 parser = argparse.ArgumentParser(description="Just an example",
