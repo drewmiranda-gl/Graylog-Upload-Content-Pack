@@ -3,3 +3,4 @@ Src/auth.ini
 Src/spotlights/*.json
 Src/extract/*
 *.zip
+Src/notes-dev.md
