@@ -215,7 +215,17 @@ def getLatestIlluminateContentPacks():
         print("    Found " + str(intIllCtPk) + " Illuminate content packs.")
 
         for ctpk in oJsonContentPacks['content_packs']:
-            if re.match(regex, ctpk['name']):
+
+            bIsIlluminateContentPack = False
+            
+            # if re.match(regex, ctpk['name']):
+            #     bIsIlluminateContentPack = True
+
+            if re.match(r"Graylog", ctpk['vendor']) and ctpk['name'].lower() == "default summary templates":
+                # print(alertText + "MATCH Default Summary Templates" + defText)
+                bIsIlluminateContentPack = True
+
+            if bIsIlluminateContentPack == True:
                 if configFromArg['verbose']:
                     print("        Illumate Content Pack: " + ctpk['name'])
                     print("            ID: " + ctpk['id'] + ", Rev: " + str(ctpk['rev']))
