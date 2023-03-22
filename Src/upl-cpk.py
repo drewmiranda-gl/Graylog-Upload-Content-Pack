@@ -218,8 +218,8 @@ def getLatestIlluminateContentPacks():
 
             bIsIlluminateContentPack = False
             
-            # if re.match(regex, ctpk['name']):
-            #     bIsIlluminateContentPack = True
+            if re.match(regex, ctpk['name']):
+                bIsIlluminateContentPack = True
 
             if re.match(r"Graylog", ctpk['vendor']) and ctpk['name'].lower() == "default summary templates":
                 # print(alertText + "MATCH Default Summary Templates" + defText)
