@@ -1,6 +1,7 @@
 # pip install requests
 # pip install configparser
 
+import time
 import requests
 from requests.auth import HTTPBasicAuth
 import configparser
@@ -12,6 +13,7 @@ import zipfile
 import os
 from os.path import exists
 import shutil
+
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -22,6 +24,7 @@ parser.add_argument("--debug", "-d", help="For debugging", action=argparse.Boole
 parser.add_argument("--config", help="Config Filename", default="config.ini")
 parser.add_argument("--remove-dups", help="Remove Duplicate Content Pack Verions.", action=argparse.BooleanOptionalAction, default=False)
 parser.add_argument("--import", help="Import json files.", action=argparse.BooleanOptionalAction, default=True)
+parser.add_argument("--illuminate-zip", help="Parent Zip file for illuminate release. NOTE: this is NOT the bundle zip!", default="")
 parser.add_argument("--import-dir", help="Directory to import json content pack files from. Path is relative to script working directory.", default="spotlights")
 parser.add_argument("--verbose", help="Verbose output.", action=argparse.BooleanOptionalAction, default=False)
 
@@ -93,19 +96,172 @@ sArgBuildUri = ""
 sArgHttps = config['DEFAULT']['https']
 if sArgHttps == "true":
     sArgBuildUri = "https://"
+    bApiHttps = True
 else:
     sArgBuildUri = "http://"
+    bApiHttps = False
 
 sArgHost = config['DEFAULT']['host']
 sArgPort = config['DEFAULT']['port']
 sArgUser = config['DEFAULT']['user']
 sArgPw = config['DEFAULT']['password']
 
+dictGraylogApi = {
+    "https": bApiHttps,
+    "host": sArgHost,
+    "port": sArgPort,
+    "user": sArgUser,
+    "password": sArgPw
+}
+
+# ================= BACKOFF START ==============================
+
+# Number of seconds to wait before retrying after a socket error
+iSocketRetryWaitSec = 5
+
+# Maximum number of retries to attempt. script exits if max is reach so be careful!
+iSocketMaxRetries = 300
+
+# How many seconds to add before each retry
+# backoff resets after a successful connection
+iSocketRetryBackOffSec = 10
+
+# maximum allowed retry wait in seconds
+iSocketRetryBackOffMaxSec = 300
+
+# how many retries before the backoff time is added before each retry
+iSocketRetryBackOffGraceCount = 24
+
+# ================= BACKOFF END ================================
+
+
+bCleanupExtractedDir = False
+
 # print("Graylog Server: " + sArgHost)
 print(alertText + "Graylog Server: " + sArgHost + defText + "\n")
 
 # build server:host and concat with URI
 sArgBuildUri=sArgBuildUri+sArgHost+":"+sArgPort
+
+def graylogApiConfigIsValid():
+    if 'https' in dictGraylogApi:
+        if not dictGraylogApi['https'] == True and not dictGraylogApi['https'] == False:
+            return False
+    else:
+        return False
+    
+    if 'host' in dictGraylogApi:
+        if not len(dictGraylogApi['host']) > 0:
+            return False
+    else:
+        return False
+
+    if 'port' in dictGraylogApi:
+        if not len(dictGraylogApi['port']) > 0 and not int(dictGraylogApi['port']) > 0:
+            return False
+    else:
+        return False
+
+    if 'user' in dictGraylogApi:
+        if not len(dictGraylogApi['user']) > 0:
+            return False
+    else:
+        return False
+
+    if 'password' in dictGraylogApi:
+        if not len(dictGraylogApi['password']) > 0:
+            return False
+    else:
+        return False
+    
+    return True
+
+def mergeDict(dictOrig: dict, dictToAdd: dict, allowReplacements: bool):
+    for item in dictToAdd:
+        
+        bSet = True
+        if item in dictOrig:
+            if allowReplacements == False:
+                bSet = False
+        
+        if bSet == True:
+            dictOrig[item] = dictToAdd[item]
+    
+    return dictOrig
+
+def doGraylogApi(argMethod: str, argApiUrl: str, argHeaders: dict, argJson: dict, argFiles: dict, argExpectedReturnCode: int, argReturnJson: bool):
+    if graylogApiConfigIsValid() == True:
+        # build URI
+        sArgBuildUri = ""
+        if dictGraylogApi['https'] == True:
+            sArgBuildUri = "https://"
+        else:
+            sArgBuildUri = "http://"
+
+        sArgHost    = dictGraylogApi['host']
+        sArgPort    = dictGraylogApi['port']
+        sArgUser    = dictGraylogApi['user']
+        sArgPw      = dictGraylogApi['password']
+
+        # print(alertText + "Graylog Server: " + sArgHost + defText + "\n")
+
+        # build server:host and concat with URI
+        sArgBuildUri=sArgBuildUri+sArgHost+":"+sArgPort
+        
+        sUrl = sArgBuildUri + argApiUrl
+
+        # add headers
+        sHeaders = {"Accept":"application/json", "X-Requested-By":"python-ctpk-upl"}
+        sHeaders = mergeDict(sHeaders, argHeaders, True)
+        
+        if argMethod.upper() == "GET":
+            try:
+                r = requests.get(sUrl, headers=sHeaders, verify=False, auth=HTTPBasicAuth(sArgUser, sArgPw))
+            except Exception as e:
+                return {
+                    "success": False,
+                    "exception": e
+                }
+        elif argMethod.upper() == "POST":
+            if argFiles == False:
+                try:
+                    r = requests.post(sUrl, json = argJson, headers=sHeaders, verify=False, auth=HTTPBasicAuth(sArgUser, sArgPw))
+                except Exception as e:
+                    return {
+                        "success": False,
+                        "exception": e
+                    }
+            else:
+                try:
+                    r = requests.post(sUrl, json = argJson, files=argFiles, headers=sHeaders, verify=False, auth=HTTPBasicAuth(sArgUser, sArgPw))
+                except Exception as e:
+                    return {
+                        "success": False,
+                        "exception": e
+                    }
+        
+        if r.status_code == argExpectedReturnCode:
+            if argReturnJson:
+                return {
+                    "json": json.loads(r.text),
+                    "status_code": r.status_code,
+                    "success": True
+                }
+            else:
+                return {
+                    "text": r.text,
+                    "status_code": r.status_code,
+                    "success": True
+                }
+        else:
+            return {
+                "status_code": r.status_code,
+                "success": False,
+                "failure_reason": "Return code " + str(r.status_code) + " does not equal expected code of " + str(argExpectedReturnCode),
+                "text": r.text
+            } 
+    else:
+        return {"msg": "api_not_configured"}
 
 def uploadContentPack(oJsonFile):
     # specify URL
@@ -357,10 +513,10 @@ def doUnzipFile(path_to_zip_file):
     sExtractFolder = "extract"
     if exists(sExtractFolder):
         print(alertText + "Warning: Folder " + sExtractFolder + " already exists. Deleting." + defText)
-        # shutil.rmtree(sExtractFolder)
+        shutil.rmtree(sExtractFolder)
     
-    # with zipfile.ZipFile(path_to_zip_file, 'r') as zip_ref:
-    #     zip_ref.extractall(sExtractFolder)
+    with zipfile.ZipFile(path_to_zip_file, 'r') as zip_ref:
+        zip_ref.extractall(sExtractFolder)
 
     if exists(sExtractFolder):
         # extract successful
@@ -382,38 +538,113 @@ def getBundleZipFileName(arg_folder):
         if file_ext.lower() == ".zip":
             return arg_folder + "/" + file
 
+def uploadIlluminateBundleZip(argIllBundleFile):
+    bActivateBundle = False
+    dHeaders = {
+        "Accept": "*/*",
+        "X-Requested-By":"python-ctpk-upl"
+    }
 
+    files = {'file': open(argIllBundleFile,'rb')}
 
+    r = doGraylogApi("POST", "/api/plugins/org.graylog.plugins.illuminate/bundles/upload", dHeaders, {}, files, 200, False)
+    print(r)
+    
+    if 'success' in r:
+        if r['success'] == True:
+            # get uploaded bundle name so we can activate it
+            if 'text' in r:
+                illBundleVerName = r['text']
+                bActivateBundle = True
+        else:
+            if 'text' in r:
+                if re.search("already exists", str(r['text']), re.IGNORECASE) and int(r['status_code']) == 403:
+                    illBundleVerName = re.search(r"Bundle version '(v\d+\.\d+\.\d+)' ", r['text'], re.IGNORECASE).group(1)
+                    bActivateBundle = True
+                    print(alertText + "Illuminate Bundle " + successText + illBundleVerName + alertText + " already exists. Will activate." + defText)
+    
+    if bActivateBundle == True:
+        dJsonActivateIllBundle = {
+            "enabled":True
+        }
+        r = doGraylogApi("POST", "/api/plugins/org.graylog.plugins.illuminate/bundles/" + illBundleVerName, dHeaders, dJsonActivateIllBundle, False, 204, False)
+        if 'success' in r:
+            if r['success'] == True:
+                return True
+    
+    return False
 
+def do_wait_until_online():
+    iSocketRetries = 0
+    iSocketInitialRetryBackOff = iSocketRetryWaitSec
 
+    while iSocketRetries < iSocketMaxRetries:
+        if iSocketRetries > 0:
+            print("Retry " + str(iSocketRetries) + " of " + str(iSocketMaxRetries))
 
+        r = doGraylogApi("GET", "/api/", {}, {}, False, 200, True)
+        if 'success' in r:
+            if r['success'] == False:
+                if "exception" in r:
+                    print(errorText)
+                    print(r["exception"])
+                    print(defText)
 
+                    print("Waiting " + str(iSocketInitialRetryBackOff) + "s Max backoff: " + str(iSocketRetryBackOffMaxSec) + "s)...")
+                    # sleep for X seconds
+                    time.sleep(iSocketInitialRetryBackOff)
 
+                    # Increment socket retry count
+                    iSocketRetries = iSocketRetries + 1
 
+                    # If the number of retries exceeds the intial backoff retry grace count
+                    #   Don't apply backoff for the first X number of retries in case the error was short lived
+                    if iSocketRetries > iSocketRetryBackOffGraceCount:
+                        # if backoff value is less than max, keep adding backoff value to delay
+                        if iSocketInitialRetryBackOff < iSocketRetryBackOffMaxSec:
+                            iSocketInitialRetryBackOff = iSocketInitialRetryBackOff + iSocketRetryBackOffSec
 
+                        # if backoff value exceeds max, set to max
+                        if iSocketInitialRetryBackOff > iSocketRetryBackOffMaxSec:
+                            iSocketInitialRetryBackOff = iSocketRetryBackOffMaxSec
 
-# extracted_folder = doUnzipFile("graylog_illuminate_standard.v3.1.0.zip")
-# dir_spotlights = extracted_folder + "/" + "spotlights"
-# ill_bundle_zip = getBundleZipFileName(extracted_folder)
+                    # If socket retries exceeds max, exit script
+                    if iSocketRetries > iSocketMaxRetries:
+                        print("ERROR! To many socket retries")
+                        return False
 
-# exit()
+            elif r['success'] == True:
+                print(successText + "Graylog Cluster is Online" + defText)
+                return True
+    return False
 
+do_wait_until_online()
 
-# getContentPack("78f8f6ed-ce4c-4033-8be8-23bb6e92f058")
-# exit()
+if len(configFromArg['illuminate_zip']):
+    illuminate_release_zip = configFromArg['illuminate_zip']
+    # 1. Extract parent zip
+    extracted_folder = doUnzipFile(illuminate_release_zip)
+    bCleanupExtractedDir = True
 
+    dir_spotlights = extracted_folder + "/" + "spotlights"
+    sImportDir = dir_spotlights
 
+    # 2. get name/path of illuminate bundle zip
+    ill_bundle_zip = getBundleZipFileName(extracted_folder)
 
-
-
-
+    # 3. Upload Zip
+    bUplSuccess = uploadIlluminateBundleZip(ill_bundle_zip)
+    if bUplSuccess == True:
+        print(successText + "Illuminate Bundle " + defText + ill_bundle_zip + successText + " successfully uploaded and activated." + defText)
+    else:
+        print(errorText + "ERROR! Illuminate bundle failed to upload and activate." + defText)
 
 if configFromArg['import']:
     print("================================================================================")
     print("Installing Content Packs from " + sImportDir)
     print("")
 
-    oFiles = glob.glob("spotlights/*.json")
+    oFiles = glob.glob(sImportDir + "/*.json")
     for file in oFiles:
         fullUploadInstallContentPack(file)
 
@@ -424,5 +655,10 @@ if configFromArg['remove_dups']:
 
     # disable duplicates
     doCheckForDuplicateContentPacks()
+
+# cleanup
+
+if bCleanupExtractedDir == True:
+    shutil.rmtree("./extract")
 
 exit()
