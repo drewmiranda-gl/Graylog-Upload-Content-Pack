@@ -27,6 +27,8 @@ parser.add_argument("--import", help="Import json files.", action=argparse.Boole
 parser.add_argument("--illuminate-zip", help="Parent Zip file for illuminate release. NOTE: this is NOT the bundle zip!", default="")
 parser.add_argument("--import-dir", help="Directory to import json content pack files from. Path is relative to script working directory.", default="spotlights")
 parser.add_argument("--verbose", help="Verbose output.", action=argparse.BooleanOptionalAction, default=False)
+parser.add_argument('--enterprise-license', help='Specify an Enterprise license file to automatically import', type=str, default="", required=False)
+parser.add_argument('--security-license', help='Specify a Security license file to automatically import', type=str, default="", required=False)
 
 args = parser.parse_args()
 configFromArg = vars(args)
@@ -618,7 +620,58 @@ def do_wait_until_online():
                 return True
     return False
 
+def readTextFirstLine(file):
+    if exists(file):
+        with open(file) as f:
+            return f.readline().strip('\n')
+    else:
+        return ""
+
+def upload_license_file_via_http_post(license_text):
+    # url = "http://localhost:9000/api/plugins/org.graylog.plugins.license/licenses"
+    sArgBuildUri = ""
+    if dictGraylogApi['https'] == True:
+        sArgBuildUri = "https://"
+    else:
+        sArgBuildUri = "http://"
+
+    sArgHost    = dictGraylogApi['host']
+    sArgPort    = dictGraylogApi['port']
+    sArgUser    = dictGraylogApi['user']
+    sArgPw      = dictGraylogApi['password']
+
+    # print(alertText + "Graylog Server: " + sArgHost + defText + "\n")
+
+    # build server:host and concat with URI
+    sArgBuildUri=sArgBuildUri+sArgHost+":"+sArgPort
+    
+    url = sArgBuildUri + "/api/plugins/org.graylog.plugins.license/licenses"
+
+    # headers
+    sHeaders = {"Accept":"application/json", "X-Requested-By":"python-ctpk-upl"}
+
+    # send req, upload json content pack file
+    r = requests.post(url, data = license_text, headers=sHeaders, verify=False, auth=HTTPBasicAuth(sArgUser, sArgPw))
+    # print(r.status_code)
+    # print(r.headers)
+    # print(r.text)
+    if int(r.status_code) == 200:
+        print(successText + "License uploaded successfully." + defText)
+    else:
+        print(errorText + "ERROR! License file failed to upload. HTTP Status Code: " + str(r.status_code))
+
+def import_graylog_license_file(license_file):
+    if int(len(license_file)) > 0:
+        if exists(license_file):
+            print("Uploading license file: " + license_file)
+            license_text = readTextFirstLine(license_file)
+            upload_license_file_via_http_post(license_text)
+
+print("Waiting until graylog server is online...")
 do_wait_until_online()
+
+import_graylog_license_file(args.enterprise_license)
+import_graylog_license_file(args.security_license)
 
 if len(configFromArg['illuminate_zip']):
     illuminate_release_zip = configFromArg['illuminate_zip']
