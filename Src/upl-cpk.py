@@ -26,6 +26,7 @@ parser.add_argument("--remove-dups", help="Remove Duplicate Content Pack Verions
 parser.add_argument("--import", help="Import json files.", action=argparse.BooleanOptionalAction, default=True)
 parser.add_argument("--illuminate-zip", help="Parent Zip file for illuminate release. NOTE: this is NOT the bundle zip!", default="")
 parser.add_argument("--import-dir", help="Directory to import json content pack files from. Path is relative to script working directory.", default="spotlights")
+parser.add_argument("--import-dir-additional", help="Directory containing additional content packs to add to uploaded illuminate content.")
 parser.add_argument("--verbose", help="Verbose output.", action=argparse.BooleanOptionalAction, default=False)
 parser.add_argument('--enterprise-license', help='Specify an Enterprise license file to automatically import', type=str, default="", required=False)
 parser.add_argument('--security-license', help='Specify a Security license file to automatically import', type=str, default="", required=False)
@@ -667,6 +668,13 @@ def import_graylog_license_file(license_file):
             license_text = readTextFirstLine(license_file)
             upload_license_file_via_http_post(license_text)
 
+def combineAdditionalContent(sSourceDir, sTargetDir):
+    oFiles = glob.glob(sSourceDir + "/*.json")
+    for addtfile in oFiles:
+        basename = os.path.basename(addtfile)
+        # print(basename)
+        shutil.copyfile(addtfile, sTargetDir + "/" + basename)
+
 print("Waiting until graylog server is online...")
 do_wait_until_online()
 
@@ -681,6 +689,10 @@ if len(configFromArg['illuminate_zip']):
 
     dir_spotlights = extracted_folder + "/" + "spotlights"
     sImportDir = dir_spotlights
+
+    # add additional content here
+    if args.import_dir_additional and len(args.import_dir_additional):
+        combineAdditionalContent(args.import_dir_additional, sImportDir)
 
     # 2. get name/path of illuminate bundle zip
     ill_bundle_zip = getBundleZipFileName(extracted_folder)
