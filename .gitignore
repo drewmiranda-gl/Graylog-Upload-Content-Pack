@@ -5,3 +5,5 @@ Src/extract/*
 *.zip
 Src/notes-dev.md
 Src/licenses/*
+Src/configs/*.ini
+Src/import-addt/*.json
