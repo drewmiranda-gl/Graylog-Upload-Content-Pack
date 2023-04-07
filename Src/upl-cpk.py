@@ -30,6 +30,7 @@ parser.add_argument("--import-dir-additional", help="Directory containing additi
 parser.add_argument("--verbose", help="Verbose output.", action=argparse.BooleanOptionalAction, default=False)
 parser.add_argument('--enterprise-license', help='Specify an Enterprise license file to automatically import', type=str, default="", required=False)
 parser.add_argument('--security-license', help='Specify a Security license file to automatically import', type=str, default="", required=False)
+parser.add_argument('--enable-packs', help='Comma separated list of illuminate packs to Enable.', type=str, default="", required=False)
 
 args = parser.parse_args()
 configFromArg = vars(args)
@@ -675,6 +676,40 @@ def combineAdditionalContent(sSourceDir, sTargetDir):
         # print(basename)
         shutil.copyfile(addtfile, sTargetDir + "/" + basename)
 
+def makeItList(input: str, split_by: str):
+    l = []
+    index = input.find(split_by)
+    if index != -1:
+        # i dunno maybe we may want to know if there is or is not a split char
+        return input.split(",")
+    else:
+        return input.split(",")
+
+def doEnableIlluminatePacks(packs_list: list):
+    # {"enabled":true,"processingPackIds":["core_anomaly_detection"],"spotlightPackIds":[]}
+
+    payload = {
+        "enabled": True,
+        "processingPackIds": packs_list,
+        "spotlightPackIds": []
+    }
+
+    dHeaders = {
+        "Accept": "*/*",
+        "X-Requested-By":"python-ctpk-upl"
+    }
+
+    r = doGraylogApi("POST", "/api/plugins/org.graylog.plugins.illuminate/bundles/v3.2.0/packs", dHeaders, payload, False, 200, False)
+    bSuccess = False
+    if 'success' in r:
+        if r['success'] == True:
+            bSuccess = True
+    
+    if bSuccess == True:
+        print(successText + "Illuminate Processing Packs successfully enabled: " + alertText + str(packs_list) + defText)
+    else:
+        print(errorText + "Illuminate Processing Packs failed to enable: " + alertText + str(packs_list) + defText)
+
 print("Waiting until graylog server is online...")
 do_wait_until_online()
 
@@ -682,6 +717,8 @@ import_graylog_license_file(args.enterprise_license)
 import_graylog_license_file(args.security_license)
 
 if len(configFromArg['illuminate_zip']):
+    # 0. license check!
+
     illuminate_release_zip = configFromArg['illuminate_zip']
     # 1. Extract parent zip
     extracted_folder = doUnzipFile(illuminate_release_zip)
@@ -703,6 +740,13 @@ if len(configFromArg['illuminate_zip']):
         print(successText + "Illuminate Bundle " + defText + ill_bundle_zip + successText + " successfully uploaded and activated." + defText)
     else:
         print(errorText + "ERROR! Illuminate bundle failed to upload and activate." + defText)
+    
+    # 4. enable illuminate packs
+    if len(args.enable_packs):
+        packs_to_enable_list = makeItList(args.enable_packs, ",")
+        print("Enabling illuminate packs: " + str(packs_to_enable_list))
+        doEnableIlluminatePacks(packs_to_enable_list)
+        exit()
 
 if configFromArg['import']:
     print("================================================================================")
