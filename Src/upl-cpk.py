@@ -688,6 +688,8 @@ def makeItList(input: str, split_by: str):
 def doEnableIlluminatePacks(packs_list: list):
     # {"enabled":true,"processingPackIds":["core_anomaly_detection"],"spotlightPackIds":[]}
 
+    # Possibly add ability to enable by pack title. This will require a live lookup though so leaving as an idea for now.
+
     payload = {
         "enabled": True,
         "processingPackIds": packs_list,
