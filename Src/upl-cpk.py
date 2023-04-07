@@ -746,7 +746,6 @@ if len(configFromArg['illuminate_zip']):
         packs_to_enable_list = makeItList(args.enable_packs, ",")
         print("Enabling illuminate packs: " + str(packs_to_enable_list))
         doEnableIlluminatePacks(packs_to_enable_list)
-        exit()
 
 if configFromArg['import']:
     print("================================================================================")
