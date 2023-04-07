@@ -30,7 +30,7 @@ parser.add_argument("--import-dir-additional", help="Directory containing additi
 parser.add_argument("--verbose", help="Verbose output.", action=argparse.BooleanOptionalAction, default=False)
 parser.add_argument('--enterprise-license', help='Specify an Enterprise license file to automatically import', type=str, default="", required=False)
 parser.add_argument('--security-license', help='Specify a Security license file to automatically import', type=str, default="", required=False)
-parser.add_argument('--enable-packs', help='Comma separated list of illuminate packs to Enable.', type=str, default="", required=False)
+parser.add_argument('--enable-packs', help='Comma separated list of illuminate packs to Enable. Uses illuminate pack_id.', type=str, default="", required=False)
 
 args = parser.parse_args()
 configFromArg = vars(args)
