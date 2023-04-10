@@ -579,6 +579,9 @@ def uploadIlluminateBundleZip(argIllBundleFile):
     return False
 
 def do_wait_until_online():
+    if configFromArg['debug'] == True:
+        return False
+    
     iSocketRetries = 0
     iSocketInitialRetryBackOff = iSocketRetryWaitSec
 
@@ -712,6 +715,34 @@ def doEnableIlluminatePacks(packs_list: list):
     else:
         print(errorText + "Illuminate Processing Packs failed to enable: " + alertText + str(packs_list) + defText)
 
+def regexExtractVersion(input: str):
+    match = re.search(r"(\d{1,2}\.\d{1,2}\.\d{1,2})", input)
+    if match:
+        return match.group(1)
+
+def getIlluminateReleaseZipPath(input: str):
+    if input.lower() == "detect":
+        cur_dir = os.getcwd()
+
+        zips = []
+        lookup = {}
+
+        oFiles = glob.glob(cur_dir + "/*.zip")
+        for zip in oFiles:
+            basename = os.path.basename(zip)
+            ver = regexExtractVersion(basename)
+
+            # print(ver)
+            zips.append(ver)
+            lookup[ver] = zip
+
+        zips.sort()
+
+        if len(zip):
+            return lookup[zips[len(zips)-1]]
+    else:
+        return input
+
 print("Waiting until graylog server is online...")
 do_wait_until_online()
 
@@ -720,34 +751,38 @@ import_graylog_license_file(args.security_license)
 
 if len(configFromArg['illuminate_zip']):
     # 0. license check!
-
-    illuminate_release_zip = configFromArg['illuminate_zip']
-    # 1. Extract parent zip
-    extracted_folder = doUnzipFile(illuminate_release_zip)
-    bCleanupExtractedDir = True
-
-    dir_spotlights = extracted_folder + "/" + "spotlights"
-    sImportDir = dir_spotlights
-
-    # add additional content here
-    if args.import_dir_additional and len(args.import_dir_additional):
-        combineAdditionalContent(args.import_dir_additional, sImportDir)
-
-    # 2. get name/path of illuminate bundle zip
-    ill_bundle_zip = getBundleZipFileName(extracted_folder)
-
-    # 3. Upload Zip
-    bUplSuccess = uploadIlluminateBundleZip(ill_bundle_zip)
-    if bUplSuccess == True:
-        print(successText + "Illuminate Bundle " + defText + ill_bundle_zip + successText + " successfully uploaded and activated." + defText)
-    else:
-        print(errorText + "ERROR! Illuminate bundle failed to upload and activate." + defText)
     
-    # 4. enable illuminate packs
-    if len(args.enable_packs):
-        packs_to_enable_list = makeItList(args.enable_packs, ",")
-        print("Enabling illuminate packs: " + str(packs_to_enable_list))
-        doEnableIlluminatePacks(packs_to_enable_list)
+
+    illuminate_release_zip = getIlluminateReleaseZipPath(configFromArg['illuminate_zip'])
+    if not exists(illuminate_release_zip):
+        print(errorText + "ERROR: file " + illuminate_release_zip + " does not exist!" + defText)
+    else:
+        # 1. Extract parent zip
+        extracted_folder = doUnzipFile(illuminate_release_zip)
+        bCleanupExtractedDir = True
+
+        dir_spotlights = extracted_folder + "/" + "spotlights"
+        sImportDir = dir_spotlights
+
+        # add additional content here
+        if args.import_dir_additional and len(args.import_dir_additional):
+            combineAdditionalContent(args.import_dir_additional, sImportDir)
+
+        # 2. get name/path of illuminate bundle zip
+        ill_bundle_zip = getBundleZipFileName(extracted_folder)
+
+        # 3. Upload Zip
+        bUplSuccess = uploadIlluminateBundleZip(ill_bundle_zip)
+        if bUplSuccess == True:
+            print(successText + "Illuminate Bundle " + defText + ill_bundle_zip + successText + " successfully uploaded and activated." + defText)
+        else:
+            print(errorText + "ERROR! Illuminate bundle failed to upload and activate." + defText)
+        
+        # 4. enable illuminate packs
+        if len(args.enable_packs):
+            packs_to_enable_list = makeItList(args.enable_packs, ",")
+            print("Enabling illuminate packs: " + str(packs_to_enable_list))
+            doEnableIlluminatePacks(packs_to_enable_list)
 
 if configFromArg['import']:
     print("================================================================================")
