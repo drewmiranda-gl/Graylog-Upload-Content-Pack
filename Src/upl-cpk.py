@@ -671,6 +671,8 @@ def import_graylog_license_file(license_file):
             print("Uploading license file: " + license_file)
             license_text = readTextFirstLine(license_file)
             upload_license_file_via_http_post(license_text)
+        else:
+            print("ERROR: Specified license file '" + str(license_file) + "' does not exist!")
 
 def combineAdditionalContent(sSourceDir, sTargetDir):
     oFiles = glob.glob(sSourceDir + "/*.json")
